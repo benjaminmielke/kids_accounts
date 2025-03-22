@@ -267,56 +267,55 @@ for idx, row in accounts_df.iterrows():
 
     # --- Form for Transferring Funds ---
     if st.session_state[f"show_transfer_{kid}"]:
-        with st.form(key=f"transfer_form_{kid}"):
-            # Store the direction in session state to persist between reruns
-            if f"transfer_direction_{kid}" not in st.session_state:
-                st.session_state[f"transfer_direction_{kid}"] = "From Cash to Savings"
-                
-            transfer_direction = st.radio(
-                "Transfer Direction:",
-                ["From Cash to Savings", "From Savings to Cash"],
-                key=f"transfer_direction_{kid}"
-            )
+        # Create separate form keys based on direction to avoid conflicts
+        transfer_direction = st.radio(
+            "Transfer Direction:",
+            ["From Cash to Savings", "From Savings to Cash"],
+            key=f"transfer_direction_{kid}"
+        )
             
-            is_cash_to_savings = transfer_direction == "From Cash to Savings"
+        is_cash_to_savings = "Cash to Savings" in transfer_direction
             
-            # Use different keys for the number input based on direction
+        with st.form(key=f"transfer_form_{kid}_{is_cash_to_savings}"):
             if is_cash_to_savings:
                 transfer_amount = st.number_input(
                     "Amount to Transfer from Available Cash to Savings", 
-                    min_value=0.0, format="%.2f", 
-                    key=f"transfer_cash_to_savings_{kid}"
-                )
-            else:
-                transfer_amount = st.number_input(
-                    "Amount to Transfer from Savings to Available Cash", 
-                    min_value=0.0, format="%.2f", 
-                    key=f"transfer_savings_to_cash_{kid}"
+                    min_value=0.0, max_value=float(available_cash), format="%.2f", 
+                    key=f"transfer_c2s_{kid}"
                 )
                 
-            submitted = st.form_submit_button("Submit")
-            if submitted:
-                if is_cash_to_savings:
+                submitted = st.form_submit_button("Transfer to Savings")
+                if submitted:
                     query_text = f"""
                         UPDATE `{ACCOUNTS_TABLE}`
                         SET available_cash = available_cash - {transfer_amount},
                             savings = savings + {transfer_amount}
                         WHERE kid_name = '{kid}'
                     """
-                    success_message = f"Transferred ${transfer_amount:,.2f} from available cash to savings for {kid}."
-                else:
+                    update_account(query_text)
+                    st.success(f"Transferred ${transfer_amount:,.2f} from available cash to savings for {kid}.")
+                    st.session_state[f"show_transfer_{kid}"] = False
+                    st.rerun()
+            else:
+                transfer_amount = st.number_input(
+                    "Amount to Transfer from Savings to Available Cash", 
+                    min_value=0.0, max_value=float(savings), format="%.2f", 
+                    key=f"transfer_s2c_{kid}"
+                )
+                
+                submitted = st.form_submit_button("Transfer to Cash")
+                if submitted:
                     query_text = f"""
                         UPDATE `{ACCOUNTS_TABLE}`
-                        SET savings = savings - {transfer_amount},
+                        SET savings = GREATEST(0, savings - {transfer_amount}),
                             available_cash = available_cash + {transfer_amount}
                         WHERE kid_name = '{kid}'
                     """
-                    success_message = f"Transferred ${transfer_amount:,.2f} from savings to available cash for {kid}."
-                
-                update_account(query_text)
-                st.success(success_message)
-                st.session_state[f"show_transfer_{kid}"] = False
-                st.rerun()  # Auto refresh after submission
+                    update_account(query_text)
+                    st.success(f"Transferred ${transfer_amount:,.2f} from savings to available cash for {kid}.")
+                    st.session_state[f"show_transfer_{kid}"] = False
+                    st.rerun()
+                    
         if st.button("Cancel Transfer", key=f"cancel_transfer_{kid}"):
             st.session_state[f"show_transfer_{kid}"] = False
             st.rerun()  # Auto refresh after cancellation
