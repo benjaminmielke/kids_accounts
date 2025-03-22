@@ -141,7 +141,7 @@ st.markdown(
 )
 
 # Custom title markup
-st.markdown('<h1 class="custom-title">Mielke Family Bank</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="custom-title">💰Mielke Bank💰</h1>', unsafe_allow_html=True)
 
 # Load account data
 accounts_df = load_accounts()
@@ -180,7 +180,7 @@ for idx, row in accounts_df.iterrows():
     
     # Title bar with white background and colored text
     st.markdown(
-        f'<div class="title-bar"><h2 style="font-family: \'Comic Sans MS\'; margin: 0;" class="{color_class}">{kid}\'s Account</h2></div>',
+        f'<div class="title-bar"><h2 style="font-family: \'Comic Sans MS\', sans-serif; margin: 0;" class="{color_class}">{kid}\'s Account</h2></div>',
         unsafe_allow_html=True,
     )
     
