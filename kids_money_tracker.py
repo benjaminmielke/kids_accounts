@@ -180,7 +180,7 @@ for idx, row in accounts_df.iterrows():
     
     # Title bar with white background and colored text
     st.markdown(
-        f'<div class="title-bar"><h2 style="font-family: \'Comic Sans MS\', sans-serif; margin: 0;" class="{color_class}">{kid}\'s Account</h2></div>',
+        f'<div class="title-bar"><h2 style="font-family: \'Comic Sans MS\', cursive, sans-serif; margin: 0;" class="{color_class}">{kid}\'s Account</h2></div>',
         unsafe_allow_html=True,
     )
     
@@ -268,17 +268,48 @@ for idx, row in accounts_df.iterrows():
     # --- Form for Transferring Funds ---
     if st.session_state[f"show_transfer_{kid}"]:
         with st.form(key=f"transfer_form_{kid}"):
-            transfer_amount = st.number_input("Amount to Transfer from Available Cash to Savings", min_value=0.0, format="%.2f", key=f"transfer_input_{kid}")
+            transfer_direction = st.radio(
+                "Transfer Direction:",
+                ["From Cash to Savings", "From Savings to Cash"],
+                key=f"transfer_direction_{kid}"
+            )
+            
+            is_cash_to_savings = transfer_direction == "From Cash to Savings"
+            
+            if is_cash_to_savings:
+                transfer_amount = st.number_input(
+                    "Amount to Transfer from Available Cash to Savings", 
+                    min_value=0.0, format="%.2f", 
+                    key=f"transfer_input_{kid}"
+                )
+            else:
+                transfer_amount = st.number_input(
+                    "Amount to Transfer from Savings to Available Cash", 
+                    min_value=0.0, format="%.2f", 
+                    key=f"transfer_input_{kid}"
+                )
+                
             submitted = st.form_submit_button("Submit")
             if submitted:
-                query_text = f"""
-                    UPDATE `{ACCOUNTS_TABLE}`
-                    SET available_cash = available_cash - {transfer_amount},
-                        savings = savings + {transfer_amount}
-                    WHERE kid_name = '{kid}'
-                """
+                if is_cash_to_savings:
+                    query_text = f"""
+                        UPDATE `{ACCOUNTS_TABLE}`
+                        SET available_cash = available_cash - {transfer_amount},
+                            savings = savings + {transfer_amount}
+                        WHERE kid_name = '{kid}'
+                    """
+                    success_message = f"Transferred ${transfer_amount:,.2f} from available cash to savings for {kid}."
+                else:
+                    query_text = f"""
+                        UPDATE `{ACCOUNTS_TABLE}`
+                        SET available_cash = available_cash + {transfer_amount},
+                            savings = savings - {transfer_amount}
+                        WHERE kid_name = '{kid}'
+                    """
+                    success_message = f"Transferred ${transfer_amount:,.2f} from savings to available cash for {kid}."
+                
                 update_account(query_text)
-                st.success(f"Transferred ${transfer_amount:,.2f} from available cash to savings for {kid}.")
+                st.success(success_message)
                 st.session_state[f"show_transfer_{kid}"] = False
                 st.rerun()  # Auto refresh after submission
         if st.button("Cancel Transfer", key=f"cancel_transfer_{kid}"):
