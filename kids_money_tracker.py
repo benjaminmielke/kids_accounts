@@ -180,7 +180,7 @@ for idx, row in accounts_df.iterrows():
     
     # Title bar with white background and colored text
     st.markdown(
-        f'<div class="title-bar"><h2 style="font-family: \'Comic Sans MS\', cursive, sans-serif; margin: 0;" class="{color_class}">{kid}\'s Account</h2></div>',
+        f'<div class="title-bar"><h2 style="font-family: \'Comic Sans MS\'; margin: 0;" class="{color_class}">{kid}\'s Account</h2></div>',
         unsafe_allow_html=True,
     )
     
