@@ -268,6 +268,10 @@ for idx, row in accounts_df.iterrows():
     # --- Form for Transferring Funds ---
     if st.session_state[f"show_transfer_{kid}"]:
         with st.form(key=f"transfer_form_{kid}"):
+            # Store the direction in session state to persist between reruns
+            if f"transfer_direction_{kid}" not in st.session_state:
+                st.session_state[f"transfer_direction_{kid}"] = "From Cash to Savings"
+                
             transfer_direction = st.radio(
                 "Transfer Direction:",
                 ["From Cash to Savings", "From Savings to Cash"],
@@ -276,17 +280,18 @@ for idx, row in accounts_df.iterrows():
             
             is_cash_to_savings = transfer_direction == "From Cash to Savings"
             
+            # Use different keys for the number input based on direction
             if is_cash_to_savings:
                 transfer_amount = st.number_input(
                     "Amount to Transfer from Available Cash to Savings", 
                     min_value=0.0, format="%.2f", 
-                    key=f"transfer_input_{kid}"
+                    key=f"transfer_cash_to_savings_{kid}"
                 )
             else:
                 transfer_amount = st.number_input(
                     "Amount to Transfer from Savings to Available Cash", 
                     min_value=0.0, format="%.2f", 
-                    key=f"transfer_input_{kid}"
+                    key=f"transfer_savings_to_cash_{kid}"
                 )
                 
             submitted = st.form_submit_button("Submit")
@@ -302,8 +307,8 @@ for idx, row in accounts_df.iterrows():
                 else:
                     query_text = f"""
                         UPDATE `{ACCOUNTS_TABLE}`
-                        SET available_cash = available_cash + {transfer_amount},
-                            savings = savings - {transfer_amount}
+                        SET savings = savings - {transfer_amount},
+                            available_cash = available_cash + {transfer_amount}
                         WHERE kid_name = '{kid}'
                     """
                     success_message = f"Transferred ${transfer_amount:,.2f} from savings to available cash for {kid}."
