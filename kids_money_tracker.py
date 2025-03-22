@@ -3,14 +3,15 @@ from google.cloud import bigquery
 import pandas as pd
 
 # -- Configuration Section --
-PROJECT_ID = "budget-451105"
+bigquery_secrets = st.secrets["bigquery"]
+credentials = service_account.Credentials.from_service_account_info(bigquery_secrets)
+PROJECT_ID = bigquery_secrets["project_id"]
 DATASET_ID = "budget_data"
 TABLE_ID = "kids_accounts"
 ACCOUNTS_TABLE = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 
 # Use your JSON authentication file for BigQuery.
-SERVICE_ACCOUNT_JSON = "budget-451105-3364a9d00d0f.json"
-client = bigquery.Client.from_service_account_json(SERVICE_ACCOUNT_JSON, project=PROJECT_ID)
+client = bigquery.Client(credentials=credentials, project=PROJECT_ID)
 
 # Function to refresh the account balances from BigQuery.
 def load_accounts():
